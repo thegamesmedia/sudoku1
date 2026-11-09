@@ -1,14 +1,760 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f6f5f0">
+  <title>Good Sudoku — A little time for yourself</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f6f5f0;
+      --card: #fffefa;
+      --ink: #24352f;
+      --muted: #78827b;
+      --line: #e8e8df;
+      --green: #37634d;
+      --green-dark: #284b3a;
+      --green-soft: #eaf0e8;
+      --yellow: #f3c878;
+      --red: #bd6258;
+      --shadow: 0 12px 40px rgb(52 61 48 / 6%);
+      font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse at 87% 11%, rgb(226 231 214 / 46%), transparent 29rem),
+        var(--paper);
+    }
+
+    button { font: inherit; }
+    button:focus-visible { outline: 3px solid #d59d48; outline-offset: 3px; }
+
+    .page-shell { width: min(1120px, calc(100% - 48px)); margin: 0 auto; }
+
+    .site-header {
+      height: 82px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgb(75 88 68 / 11%);
+    }
+
+    .brand { display: inline-flex; align-items: center; gap: 11px; color: var(--ink); text-decoration: none; }
+    .brand-mark {
+      width: 35px;
+      height: 35px;
+      display: grid;
+      grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+      gap: 2px;
+      padding: 5px;
+      border-radius: 10px;
+      background: var(--green);
+    }
+
+    .brand-mark i { border-radius: 2px; background: rgb(255 255 255 / 84%); }
+    .brand-mark i:nth-child(2), .brand-mark i:nth-child(6) { background: var(--yellow); }
+    .brand-name { font-family: Georgia, "Times New Roman", serif; font-size: 19px; font-weight: 700; letter-spacing: -.5px; }
+    .header-note { color: var(--muted); font-size: 13px; letter-spacing: .02em; }
+
+    main { padding: 44px 0 56px; }
+    .intro { margin-bottom: 27px; text-align: center; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 11px;
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before, .eyebrow::after { width: 17px; height: 1px; content: ""; background: #b6c4b5; }
+    h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(32px, 5vw, 44px); font-weight: 500; letter-spacing: -1.5px; }
+    .intro p { margin: 9px 0 0; color: var(--muted); font-size: 14px; }
+
+    .game-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 620px) minmax(230px, 280px);
+      align-items: start;
+      justify-content: center;
+      gap: 22px;
+    }
+
+    .game-card, .side-card { border: 1px solid rgb(78 92 69 / 9%); border-radius: 18px; background: var(--card); box-shadow: var(--shadow); }
+    .game-card { padding: 23px 25px 20px; }
+
+    .game-topline { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 19px; }
+    .difficulty-picker { display: flex; align-items: center; gap: 3px; padding: 4px; border: 1px solid #ededE5; border-radius: 10px; background: #f8f8f4; }
+    .difficulty-picker button {
+      min-width: 70px;
+      padding: 8px 11px;
+      border: 0;
+      border-radius: 7px;
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 650;
+      transition: background .16s, color .16s, box-shadow .16s;
+    }
+
+    .difficulty-picker button[aria-pressed="true"] { color: var(--green-dark); background: white; box-shadow: 0 1px 5px rgb(40 50 40 / 10%); }
+    .new-game {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 9px;
+      color: white;
+      background: var(--green);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      transition: background .16s, transform .16s;
+    }
+
+    .new-game:hover { transform: translateY(-1px); background: var(--green-dark); }
+    .new-game svg, .tool-button svg { width: 15px; height: 15px; flex: 0 0 auto; }
+
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .stat {
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 15px;
+      border: 1px solid #edeee7;
+      border-radius: 10px;
+      background: #fcfcf8;
+    }
+
+    .stat-label { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; font-weight: 600; }
+    .stat-label svg { width: 14px; height: 14px; color: #78877b; }
+    .stat-value { color: var(--ink); font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 700; }
+
+    .board {
+      width: 100%;
+      aspect-ratio: 1;
+      display: grid;
+      grid-template: repeat(9, minmax(0, 1fr)) / repeat(9, minmax(0, 1fr));
+      overflow: hidden;
+      border: 2px solid #627566;
+      border-radius: 8px;
+      background: white;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .cell {
+      position: relative;
+      min-width: 0;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      border-right: 1px solid #dde1d9;
+      border-bottom: 1px solid #dde1d9;
+      border-radius: 0;
+      color: #496d8b;
+      background: #fffefa;
+      cursor: pointer;
+      font-size: clamp(14px, 2.5vw, 21px);
+      font-variant-numeric: tabular-nums;
+      font-weight: 550;
+      transition: background .1s;
+    }
+
+    .cell:nth-child(9n) { border-right: 0; }
+    .cell:nth-child(n+73) { border-bottom: 0; }
+    .cell:nth-child(3n):not(:nth-child(9n)) { border-right: 2px solid #87978a; }
+    .cell:nth-child(n+19):nth-child(-n+27),
+    .cell:nth-child(n+46):nth-child(-n+54) { border-bottom: 2px solid #87978a; }
+    .cell.given { color: #27392f; font-weight: 750; cursor: default; }
+    .cell.peer { background: #f2f5ef; }
+    .cell.same-value { background: #e7eee4; color: #284c39; font-weight: 750; }
+    .cell.selected { z-index: 1; background: #dce8da; box-shadow: inset 0 0 0 2px #63816a; }
+    .cell.conflict { color: var(--red); background: #fbece8; }
+    .cell.wrong { color: var(--red); }
+
+    .notes-grid { width: 100%; height: 100%; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); align-items: center; justify-items: center; color: #8a938c; font-size: clamp(7px, 1vw, 10px); font-weight: 500; line-height: 1; }
+    .notes-grid span { display: grid; place-items: center; }
+
+    .tool-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 15px; }
+    .tool-button {
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 8px 6px;
+      border: 1px solid #e8eae2;
+      border-radius: 9px;
+      color: #57665d;
+      background: #fffefa;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 650;
+      transition: border-color .15s, background .15s, color .15s;
+    }
+
+    .tool-button:hover { border-color: #b9c9b9; background: #f6f8f3; }
+    .tool-button.active { border-color: #9ab19a; color: var(--green-dark); background: var(--green-soft); }
+    .tool-button:disabled { opacity: .43; cursor: not-allowed; }
+
+    .number-pad { display: grid; grid-template-columns: repeat(9, 1fr); gap: 6px; margin-top: 12px; }
+    .number-button {
+      min-width: 0;
+      height: 43px;
+      border: 1px solid #e5e9e1;
+      border-radius: 8px;
+      color: var(--green-dark);
+      background: #f5f7f1;
+      cursor: pointer;
+      font-size: 17px;
+      font-weight: 700;
+      transition: transform .12s, background .12s, opacity .12s;
+    }
+
+    .number-button:hover:not(:disabled) { transform: translateY(-1px); background: #eaf0e7; }
+    .number-button:disabled { color: #a4ada3; background: #f0f1ec; cursor: default; opacity: .65; }
+    .status-message { min-height: 23px; margin: 12px 2px 0; color: var(--muted); font-size: 12px; text-align: center; }
+    .status-message.success { color: var(--green); font-weight: 700; }
+    .status-message.error { color: var(--red); }
+
+    .side-column { display: grid; gap: 14px; }
+    .side-card { padding: 21px; }
+    .side-heading { display: flex; align-items: center; gap: 9px; margin: 0 0 13px; font-family: Georgia, "Times New Roman", serif; font-size: 18px; font-weight: 600; }
+    .side-heading .sparkle { display: grid; width: 26px; height: 26px; place-items: center; border-radius: 8px; color: #8d672a; background: #fbf0d8; font-size: 15px; }
+    .side-copy { margin: 0; color: #78827b; font-size: 12px; line-height: 1.75; }
+    .tip { margin-top: 17px; padding: 12px 13px; border-left: 2px solid #9ab39a; border-radius: 0 8px 8px 0; color: #56685b; background: #f3f6ef; font-size: 11px; line-height: 1.65; }
+    .side-divider { height: 1px; margin: 16px 0; background: #eceee7; }
+    .keyboard-title { margin: 0 0 10px; color: #47574d; font-size: 11px; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
+    .shortcut { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 9px 0; color: #78827b; font-size: 11px; }
+    kbd { min-width: 23px; padding: 3px 6px; border: 1px solid #e7e9e1; border-radius: 5px; color: #59665d; background: #fafaf6; font-family: inherit; font-size: 10px; text-align: center; }
+    .shortcuts { display: flex; gap: 4px; }
+    .side-footnote { margin: 15px 0 0; color: #a0a69e; font-size: 10px; line-height: 1.55; }
+
+    @media (max-width: 790px) {
+      .page-shell { width: min(620px, calc(100% - 32px)); }
+      .site-header { height: 68px; }
+      main { padding-top: 34px; }
+      .game-layout { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+      .side-column { grid-template-columns: 1fr 1fr; align-items: stretch; }
+    }
+
+    @media (max-width: 480px) {
+      .page-shell { width: calc(100% - 24px); }
+      .header-note { font-size: 11px; }
+      main { padding-top: 28px; }
+      .intro { margin-bottom: 21px; }
+      .game-card { padding: 14px 12px 12px; border-radius: 14px; }
+      .game-topline { align-items: stretch; gap: 8px; margin-bottom: 13px; }
+      .difficulty-picker { flex: 1; min-width: 0; }
+      .difficulty-picker button { min-width: 0; flex: 1; padding: 8px 4px; font-size: 11px; }
+      .new-game { gap: 5px; padding: 9px 9px; font-size: 11px; }
+      .stat { min-height: 47px; padding: 0 10px; }
+      .stat-label { gap: 5px; font-size: 10px; }
+      .tool-row { gap: 5px; margin-top: 11px; }
+      .tool-button { min-height: 40px; gap: 4px; font-size: 10px; }
+      .tool-button svg { width: 13px; height: 13px; }
+      .number-pad { gap: 4px; margin-top: 9px; }
+      .number-button { height: 39px; border-radius: 6px; font-size: 16px; }
+      .side-column { grid-template-columns: 1fr; gap: 10px; }
+      .side-card { padding: 17px; }
+      .side-card.strategy-card { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
 </head>
 <body>
-    <header>hello</header>
-    <h1>
-        <strong>Hello, World!</strong>
-    </h1>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="Good Sudoku home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="brand-name">good sudoku</span>
+      </a>
+      <span class="header-note">A little time for yourself.</span>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <div class="eyebrow">Your daily moment of calm</div>
+        <h1 id="page-title">A fresh little puzzle.</h1>
+        <p>Take a breath, find your rhythm, and let the numbers fall into place.</p>
+      </section>
+
+      <div class="game-layout">
+        <section class="game-card" aria-label="Sudoku game">
+          <div class="game-topline">
+            <div class="difficulty-picker" role="group" aria-label="Puzzle difficulty">
+              <button type="button" data-difficulty="easy" aria-pressed="false">Easy</button>
+              <button type="button" data-difficulty="medium" aria-pressed="true">Medium</button>
+              <button type="button" data-difficulty="hard" aria-pressed="false">Hard</button>
+            </div>
+            <button type="button" class="new-game" id="new-game">
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M16.2 7.3A6.6 6.6 0 0 0 4.7 5.2L3.2 7M3.2 7V3.9M3.2 7h3.1M3.8 12.7a6.6 6.6 0 0 0 11.5 2.1l1.5-1.8m0 0v3.1m0-3.1h-3.1" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              New puzzle
+            </button>
+          </div>
+
+          <div class="stats" aria-label="Game statistics">
+            <div class="stat">
+              <span class="stat-label">
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7.1" stroke="currentColor" stroke-width="1.5"/><path d="M10 5.9v4.4l2.8 1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Time
+              </span>
+              <span class="stat-value" id="timer">00:00</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m10 2.2 2.2 4.4 4.9.7-3.5 3.4.8 4.8-4.4-2.3-4.4 2.3.8-4.8-3.5-3.4 4.9-.7L10 2.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+                Mistakes
+              </span>
+              <span class="stat-value" id="mistakes">0 / 3</span>
+            </div>
+          </div>
+
+          <div class="board" id="board" role="grid" aria-label="Sudoku board"></div>
+          <div class="tool-row" aria-label="Game actions">
+            <button type="button" class="tool-button" id="notes-button" aria-pressed="false" title="Toggle pencil notes (N)">
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m12.2 4 3.8 3.8M4 16l3.3-.7L16.3 6.3a1.8 1.8 0 0 0-2.6-2.6L4.7 12.7 4 16Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Notes
+            </button>
+            <button type="button" class="tool-button" id="erase-button" title="Erase a cell (Backspace)">
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m8 4-5.3 6L8 16h8.5a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 16.5 4H8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m10 7 4 5m0-5-4 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Erase
+            </button>
+            <button type="button" class="tool-button" id="undo-button" title="Undo last move (Ctrl+Z)">
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M7.4 6 3.5 9.5l3.9 3.7M4 9.5h7.3a5.2 5.2 0 1 1 0 10.4" transform="translate(0 -3)" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Undo
+            </button>
+            <button type="button" class="tool-button" id="hint-button" title="Reveal a cell (H)">
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2.8a5.3 5.3 0 0 0-3.5 9.3c.8.7 1.3 1.5 1.4 2.5h4.2c.1-1 .6-1.8 1.4-2.5A5.3 5.3 0 0 0 10 2.8ZM8.1 16.5h3.8M8.8 18.3h2.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Hint
+            </button>
+          </div>
+          <div class="number-pad" id="number-pad" aria-label="Enter a number"></div>
+          <p class="status-message" id="status-message" role="status" aria-live="polite">Pick a square and place a number to begin.</p>
+        </section>
+
+        <aside class="side-column" aria-label="How to play">
+          <section class="side-card strategy-card">
+            <h2 class="side-heading"><span class="sparkle" aria-hidden="true">✦</span> A gentle reminder</h2>
+            <p class="side-copy">Fill each row, column, and 3 × 3 square with the numbers 1 through 9. Each number appears just once.</p>
+            <div class="tip"><strong>A little strategy:</strong> Look for a row, column, or square that's almost complete. Sometimes the next number is closer than it looks.</div>
+            <div class="side-divider"></div>
+            <p class="side-copy">No rush. Your puzzle will be right here whenever you're ready.</p>
+          </section>
+          <section class="side-card">
+            <h2 class="keyboard-title">Keyboard shortcuts</h2>
+            <div class="shortcut"><span>Enter a number</span><span class="shortcuts"><kbd>1</kbd>–<kbd>9</kbd></span></div>
+            <div class="shortcut"><span>Move around</span><span class="shortcuts"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd></span></div>
+            <div class="shortcut"><span>Pencil notes</span><kbd>N</kbd></div>
+            <div class="shortcut"><span>Undo a move</span><kbd>⌘</kbd><kbd>Z</kbd></div>
+            <p class="side-footnote">We all make mistakes. The board gently points out a number that's not quite right.</p>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const basePuzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
+      const baseSolution = "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
+      const blankCounts = { easy: 37, medium: 45, hard: 51 };
+      const boardElement = document.querySelector("#board");
+      const numberPadElement = document.querySelector("#number-pad");
+      const timerElement = document.querySelector("#timer");
+      const mistakesElement = document.querySelector("#mistakes");
+      const messageElement = document.querySelector("#status-message");
+      const notesButton = document.querySelector("#notes-button");
+      const undoButton = document.querySelector("#undo-button");
+      const hintButton = document.querySelector("#hint-button");
+
+      let puzzle = [];
+      let solution = [];
+      let values = [];
+      let given = [];
+      let notes = Array.from({ length: 81 }, () => new Set());
+      let selectedCell = -1;
+      let notesMode = false;
+      let mistakes = 0;
+      let elapsedSeconds = 0;
+      let timerInterval = null;
+      let completed = false;
+      let history = [];
+      let currentDifficulty = "medium";
+
+      const shuffle = (items) => {
+        for (let index = items.length - 1; index > 0; index--) {
+          const otherIndex = Math.floor(Math.random() * (index + 1));
+          [items[index], items[otherIndex]] = [items[otherIndex], items[index]];
+        }
+        return items;
+      };
+
+      function makePuzzle() {
+        let puzzleRows = Array.from({ length: 9 }, (_, row) =>
+          Array.from({ length: 9 }, (_, column) => Number(basePuzzle[row * 9 + column])));
+        let solutionRows = Array.from({ length: 9 }, (_, row) =>
+          Array.from({ length: 9 }, (_, column) => Number(baseSolution[row * 9 + column])));
+
+        if (Math.random() < 0.5) {
+          puzzleRows = puzzleRows[0].map((_, row) => puzzleRows.map((line) => line[row]));
+          solutionRows = solutionRows[0].map((_, row) => solutionRows.map((line) => line[row]));
+        }
+
+        const bandOrder = shuffle([0, 1, 2]);
+        const rowOrder = bandOrder.flatMap((band) => shuffle([0, 1, 2]).map((row) => band * 3 + row));
+        const stackOrder = shuffle([0, 1, 2]);
+        const columnOrder = stackOrder.flatMap((stack) => shuffle([0, 1, 2]).map((column) => stack * 3 + column));
+        const digitOrder = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        const digitMap = [0, ...digitOrder];
+
+        const transform = (grid) => rowOrder.map((row) =>
+          columnOrder.map((column) => digitMap[grid[row][column]]));
+
+        const transformedPuzzle = transform(puzzleRows).flat();
+        const transformedSolution = transform(solutionRows).flat();
+        const emptyIndices = shuffle(transformedPuzzle
+          .map((value, index) => value === 0 ? index : -1)
+          .filter((index) => index !== -1));
+        const blanks = blankCounts[currentDifficulty];
+        const cellsToReveal = emptyIndices.length - blanks;
+        for (let index = 0; index < cellsToReveal; index++) {
+          const cell = emptyIndices[index];
+          transformedPuzzle[cell] = transformedSolution[cell];
+        }
+
+        return { puzzle: transformedPuzzle, solution: transformedSolution };
+      }
+
+      function setMessage(text, kind = "") {
+        messageElement.textContent = text;
+        messageElement.className = `status-message${kind ? ` ${kind}` : ""}`;
+      }
+
+      function updateTimer() {
+        const minutes = Math.floor(elapsedSeconds / 60).toString().padStart(2, "0");
+        const seconds = (elapsedSeconds % 60).toString().padStart(2, "0");
+        timerElement.textContent = `${minutes}:${seconds}`;
+      }
+
+      function startTimer() {
+        if (timerInterval !== null) window.clearInterval(timerInterval);
+        timerInterval = window.setInterval(() => {
+          if (!completed) {
+            elapsedSeconds++;
+            updateTimer();
+          }
+        }, 1000);
+      }
+
+      function getConflicts() {
+        const conflicts = new Set();
+        const checkGroup = (indices) => {
+          const seen = new Map();
+          for (const index of indices) {
+            const value = values[index];
+            if (value === 0) continue;
+            if (seen.has(value)) {
+              conflicts.add(index);
+              conflicts.add(seen.get(value));
+            } else {
+              seen.set(value, index);
+            }
+          }
+        };
+
+        for (let row = 0; row < 9; row++) {
+          checkGroup(Array.from({ length: 9 }, (_, column) => row * 9 + column));
+        }
+        for (let column = 0; column < 9; column++) {
+          checkGroup(Array.from({ length: 9 }, (_, row) => row * 9 + column));
+        }
+        for (let boxRow = 0; boxRow < 3; boxRow++) {
+          for (let boxColumn = 0; boxColumn < 3; boxColumn++) {
+            const cells = [];
+            for (let row = 0; row < 3; row++) {
+              for (let column = 0; column < 3; column++) {
+                cells.push((boxRow * 3 + row) * 9 + boxColumn * 3 + column);
+              }
+            }
+            checkGroup(cells);
+          }
+        }
+        return conflicts;
+      }
+
+      function renderBoard() {
+        const conflicts = getConflicts();
+        const selectedValue = selectedCell === -1 ? 0 : values[selectedCell];
+        const selectedRow = Math.floor(selectedCell / 9);
+        const selectedColumn = selectedCell % 9;
+        const html = [];
+
+        for (let index = 0; index < 81; index++) {
+          const row = Math.floor(index / 9);
+          const column = index % 9;
+          const isSelected = index === selectedCell;
+          const isPeer = selectedCell !== -1 && (row === selectedRow || column === selectedColumn ||
+            (Math.floor(row / 3) === Math.floor(selectedRow / 3) &&
+             Math.floor(column / 3) === Math.floor(selectedColumn / 3)));
+          const classes = ["cell"];
+          if (given[index]) classes.push("given");
+          if (isPeer) classes.push("peer");
+          if (selectedValue !== 0 && values[index] === selectedValue) classes.push("same-value");
+          if (isSelected) classes.push("selected");
+          if (conflicts.has(index)) classes.push("conflict");
+          if (values[index] !== 0 && !given[index] && values[index] !== solution[index]) classes.push("wrong");
+
+          const value = values[index];
+          const content = value
+            ? String(value)
+            : notes[index].size
+              ? `<span class="notes-grid">${Array.from({ length: 9 }, (_, noteIndex) =>
+                `<span>${notes[index].has(noteIndex + 1) ? noteIndex + 1 : ""}</span>`).join("")}</span>`
+              : "";
+          const accessibleValue = value
+            ? `, ${given[index] ? "given " : ""}${value}${!given[index] && value !== solution[index] ? ", incorrect" : ""}`
+            : notes[index].size ? `, notes ${[...notes[index]].sort().join(", ")}` : ", empty";
+          html.push(`<button type="button" class="${classes.join(" ")}" role="gridcell" data-cell="${index}" aria-label="Row ${row + 1}, column ${column + 1}${accessibleValue}" aria-selected="${isSelected}"${given[index] ? " aria-disabled=\"true\"" : ""}>${content}</button>`);
+        }
+        boardElement.innerHTML = html.join("");
+        for (const button of boardElement.querySelectorAll(".cell")) {
+          button.addEventListener("click", () => selectCell(Number(button.dataset.cell)));
+        }
+
+        const counts = Array(10).fill(0);
+        values.forEach((value) => { if (value) counts[value]++; });
+        for (const button of numberPadElement.querySelectorAll(".number-button")) {
+          button.disabled = completed || counts[Number(button.dataset.value)] === 9;
+        }
+        undoButton.disabled = history.length === 0 || completed;
+        hintButton.disabled = completed;
+        notesButton.disabled = completed;
+      }
+
+      function selectCell(index) {
+        selectedCell = index;
+        renderBoard();
+      }
+
+      function saveHistory() {
+        history.push({
+          values: [...values],
+          notes: notes.map((cellNotes) => new Set(cellNotes)),
+          mistakes
+        });
+        if (history.length > 100) history.shift();
+      }
+
+      function checkForWin() {
+        if (values.some((value, index) => value !== solution[index])) return false;
+        completed = true;
+        setMessage(`Beautifully done — you finished in ${timerElement.textContent}.`, "success");
+        renderBoard();
+        return true;
+      }
+
+      function enterNumber(value) {
+        if (selectedCell === -1) {
+          setMessage("Choose an empty square first.");
+          return;
+        }
+        if (given[selectedCell] || completed) return;
+
+        if (notesMode) {
+          if (values[selectedCell] !== 0) return;
+          saveHistory();
+          if (notes[selectedCell].has(value)) notes[selectedCell].delete(value);
+          else notes[selectedCell].add(value);
+          renderBoard();
+          return;
+        }
+
+        if (values[selectedCell] === value) return;
+        saveHistory();
+        notes[selectedCell].clear();
+        values[selectedCell] = value;
+        if (value !== solution[selectedCell]) {
+          mistakes++;
+          mistakesElement.textContent = `${mistakes} / 3`;
+          if (mistakes >= 3) {
+            setMessage("That's three slips. Take a breath and start a fresh puzzle.", "error");
+            completed = true;
+          } else {
+            setMessage("Not quite — try another number.", "error");
+          }
+        } else {
+          setMessage("Lovely. Keep going.");
+        }
+        renderBoard();
+        if (!completed) checkForWin();
+      }
+
+      function eraseSelected() {
+        if (selectedCell === -1 || given[selectedCell] || completed) return;
+        if (values[selectedCell] === 0 && notes[selectedCell].size === 0) return;
+        saveHistory();
+        values[selectedCell] = 0;
+        notes[selectedCell].clear();
+        renderBoard();
+        setMessage("Square cleared.");
+      }
+
+      function undoMove() {
+        const previous = history.pop();
+        if (!previous || completed) return;
+        values = previous.values;
+        notes = previous.notes;
+        mistakes = previous.mistakes;
+        mistakesElement.textContent = `${mistakes} / 3`;
+        setMessage("Last move undone.");
+        renderBoard();
+      }
+
+      function revealHint() {
+        if (completed) return;
+        let target = selectedCell;
+        if (target === -1 || given[target] || values[target] === solution[target]) {
+          target = values.findIndex((value, index) => value !== solution[index]);
+        }
+        if (target === -1) {
+          setMessage("There are no empty squares left.");
+          return;
+        }
+        saveHistory();
+        selectedCell = target;
+        values[target] = solution[target];
+        notes[target].clear();
+        renderBoard();
+        setMessage("A little nudge, just for you.");
+        checkForWin();
+      }
+
+      function toggleNotes() {
+        if (completed) return;
+        notesMode = !notesMode;
+        notesButton.classList.toggle("active", notesMode);
+        notesButton.setAttribute("aria-pressed", String(notesMode));
+        setMessage(notesMode ? "Pencil notes are on. Pick a number to jot it down." : "Pencil notes are off.");
+      }
+
+      function newGame() {
+        const generated = makePuzzle();
+        puzzle = generated.puzzle;
+        solution = generated.solution;
+        values = [...puzzle];
+        given = puzzle.map((value) => value !== 0);
+        notes = Array.from({ length: 81 }, () => new Set());
+        history = [];
+        selectedCell = -1;
+        notesMode = false;
+        mistakes = 0;
+        elapsedSeconds = 0;
+        completed = false;
+        mistakesElement.textContent = "0 / 3";
+        notesButton.classList.remove("active");
+        notesButton.setAttribute("aria-pressed", "false");
+        updateTimer();
+        setMessage("Pick a square and place a number to begin.");
+        renderBoard();
+        startTimer();
+      }
+
+      for (let value = 1; value <= 9; value++) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "number-button";
+        button.dataset.value = String(value);
+        button.textContent = String(value);
+        button.setAttribute("aria-label", `Enter ${value}`);
+        button.addEventListener("click", () => enterNumber(value));
+        numberPadElement.append(button);
+      }
+
+      document.querySelector("#new-game").addEventListener("click", newGame);
+      document.querySelector("#erase-button").addEventListener("click", eraseSelected);
+      document.querySelector("#undo-button").addEventListener("click", undoMove);
+      document.querySelector("#hint-button").addEventListener("click", revealHint);
+      notesButton.addEventListener("click", toggleNotes);
+
+      for (const button of document.querySelectorAll("[data-difficulty]")) {
+        button.addEventListener("click", () => {
+          currentDifficulty = button.dataset.difficulty;
+          for (const option of document.querySelectorAll("[data-difficulty]")) {
+            option.setAttribute("aria-pressed", String(option === button));
+          }
+          newGame();
+        });
+      }
+
+      document.addEventListener("keydown", (event) => {
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
+          event.preventDefault();
+          undoMove();
+          return;
+        }
+        if (event.metaKey || event.ctrlKey || event.altKey) return;
+        if (/^[1-9]$/.test(event.key)) {
+          event.preventDefault();
+          enterNumber(Number(event.key));
+          return;
+        }
+        if (event.key === "Backspace" || event.key === "Delete") {
+          event.preventDefault();
+          eraseSelected();
+          return;
+        }
+        if (event.key.toLowerCase() === "n") {
+          toggleNotes();
+          return;
+        }
+        if (event.key.toLowerCase() === "h") {
+          revealHint();
+          return;
+        }
+        if (selectedCell === -1 || !event.key.startsWith("Arrow")) return;
+        event.preventDefault();
+        const row = Math.floor(selectedCell / 9);
+        const column = selectedCell % 9;
+        const movement = {
+          ArrowUp: [-1, 0],
+          ArrowDown: [1, 0],
+          ArrowLeft: [0, -1],
+          ArrowRight: [0, 1]
+        }[event.key];
+        const nextRow = (row + movement[0] + 9) % 9;
+        const nextColumn = (column + movement[1] + 9) % 9;
+        selectCell(nextRow * 9 + nextColumn);
+      });
+
+      newGame();
+    })();
+  </script>
 </body>
 </html>
