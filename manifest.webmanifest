@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "Good Sudoku",
+  "short_name": "Sudoku",
+  "description": "A calm, thoughtful Sudoku game. Take a little time for yourself.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f5f0",
+  "theme_color": "#f6f5f0",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
